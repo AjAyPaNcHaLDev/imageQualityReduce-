@@ -22,6 +22,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.SeekBar;
 import android.widget.Toast;
 
 import ajay.developer.camera.R;
@@ -46,29 +47,28 @@ public class MainActivity extends AppCompatActivity {
     public static final int REQUEST_IMAGE_CAPTURE=1;
     private String TAG = "TAGA";
     File photoFile = null;
-    EditText inpGIS, inpZONE;
-    String GIS;
-    String Zone;
+    EditText inpFileName, inpZONE;
+    String fileName;
     String imageFileName;
     File storageDir;
     Bitmap takenImage;
-    public String getGIS() {
-        return GIS;
+    int Quality;
+
+SeekBar seekBar;
+    public int getQuality() {
+        return Quality;
     }
 
-    public void setGIS(String GIS) {
-        this.GIS = GIS;
+    public void setQuality(int quality) {
+        Quality = quality;
     }
 
-    public String getZone() {
-        return Zone;
+    public String getFileName() {
+        return fileName;
     }
-
-    public void setZone(String zone) {
-        Zone = zone;
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
     }
-
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,9 +82,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void dispatchTakePictureIntent() {
         imageView.setImageBitmap(null);
-        setGIS(inpGIS.getText().toString());
-        setZone(inpZONE.getText().toString());
-        if(getGIS().isEmpty() || getZone().isEmpty()){
+        setFileName(inpFileName.getText().toString());
+
+        if(getFileName().isEmpty() ){
             Toast.makeText(MainActivity.this,"please fill ZONE and GIS", Toast.LENGTH_SHORT).show();
         }
         else {
@@ -104,7 +104,7 @@ public class MainActivity extends AppCompatActivity {
                 // Continue only if the File was successfully created
                 if (photoFile != null) {
                     Uri photoURI = FileProvider.getUriForFile(this,
-                            "com.example.camera.fileprovider",
+                            "ajay.developer.camera.fileprovider",
                             photoFile);
                     takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
 
@@ -130,7 +130,7 @@ public class MainActivity extends AppCompatActivity {
         Log.e(TAG, "createImageFile: " );
         // Create an image file name
 
-        imageFileName =  "Z-"+getZone()+"-"+getGIS()+"  __";
+        imageFileName =  getFileName()+"  __";
         storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
         File image= File.createTempFile(
                 imageFileName,  /* prefix */
@@ -167,11 +167,11 @@ public class MainActivity extends AppCompatActivity {
                         Locale.getDefault()).format(new Date());
                 String dd = new SimpleDateFormat("dd",
                         Locale.getDefault()).format(new Date());
-                String file_name="Z-"+getZone()+"-"+getGIS();
+                String file_name=getFileName();
                 String root = Environment.getExternalStorageDirectory().getPath();
-                File myDir = new File(root + "/Android/data/com.example.camera/files/Pictures/Abohar Survey Images /"+dd+"-"+mm+"-"+yyyy+"/"+"Z-"+getZone());
+                File myDir = new File(root + "/Image Quality reduce/Pictures/"+dd+"-"+mm+"-"+yyyy+"/");
                 myDir.mkdirs();
-
+                Log.e(TAG, "onactivity function: end "+currentPhotoPath );
                 if(myDir.exists()){
 
                     String fname = file_name+".jpeg";
@@ -182,7 +182,7 @@ public class MainActivity extends AppCompatActivity {
 
                         AlertDialog.Builder reName=new AlertDialog.Builder(MainActivity.this);
                         reName.setTitle("Alert");
-                        reName.setMessage("You went to "+getZone()+"-" +getGIS()+" reCapture picture ?"+currentPhotoPath+ imageFileName);
+                        reName.setMessage("You went to " +getFileName()+" reCapture picture ?"+currentPhotoPath+ imageFileName);
                         reName.setCancelable(false);
 
                         reName.setPositiveButton("Yes reCapture",
@@ -193,11 +193,11 @@ public class MainActivity extends AppCompatActivity {
                                         try {
 
                                             FileOutputStream out = new FileOutputStream(file);
-                                            takenImage.compress(Bitmap.CompressFormat.JPEG, 20, out);
+                                            takenImage.compress(Bitmap.CompressFormat.JPEG, getQuality(), out);
                                             out.flush();
                                             out.close();
                                             imageView.setImageBitmap(takenImage);
-                                            Toast.makeText(MainActivity.this,"Z-"+getZone()+"-"+getGIS()+ "re recapture successfully Saved", Toast.LENGTH_LONG).show();
+                                            Toast.makeText(MainActivity.this,getFileName()+ "re recapture successfully Saved", Toast.LENGTH_LONG).show();
                                         } catch (Exception e) {
                                             e.printStackTrace();
                                             Toast.makeText(MainActivity.this,e.toString(), Toast.LENGTH_LONG).show();
@@ -224,11 +224,11 @@ public class MainActivity extends AppCompatActivity {
                         try {
                             Toast.makeText(MainActivity.this,"try block enter", Toast.LENGTH_LONG).show();
                             FileOutputStream out = new FileOutputStream(file);
-                            takenImage.compress(Bitmap.CompressFormat.JPEG, 20, out);
+                            takenImage.compress(Bitmap.CompressFormat.JPEG, getQuality(), out);
                             out.flush();
                             out.close();
                             imageView.setImageBitmap(takenImage);
-                            Toast.makeText(MainActivity.this,"Z-"+getZone()+"-"+getGIS()+ " successfully Saved", Toast.LENGTH_LONG).show();
+                            Toast.makeText(MainActivity.this,getFileName()+ " successfully Saved", Toast.LENGTH_LONG).show();
                         } catch (Exception e) {
                             e.printStackTrace();
                             Toast.makeText(MainActivity.this,e.toString(), Toast.LENGTH_LONG).show();
@@ -275,11 +275,29 @@ public class MainActivity extends AppCompatActivity {
             public void onPermissionGranted(PermissionGrantedResponse permissionGrantedResponse) {
                 imageView=findViewById(R.id.image_view);
                 capturePic=findViewById(R.id.capturePic);
-                inpGIS=findViewById(R.id.inpGIS);
-                inpZONE=findViewById(R.id.inpZONE);
+                inpFileName=findViewById(R.id.inpFileName);
+                seekBar=findViewById(R.id.inpseekBar);
                 accessCamera();
                 accessMemory();
 
+                seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+
+                    @Override
+                    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                        setQuality(progress);
+
+                    }
+
+                    @Override
+                    public void onStartTrackingTouch(SeekBar seekBar) {
+
+                    }
+
+                    @Override
+                    public void onStopTrackingTouch(SeekBar seekBar) {
+Toast.makeText(MainActivity.this,"Bar value is set to"+getQuality(),Toast.LENGTH_LONG).show();
+                    }
+                });
                 capturePic.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
