@@ -4,7 +4,7 @@
     "type": "APK",
     "kind": "Directory"
   },
-  "applicationId": "com.example.camera",
+  "applicationId": "ajay.developer.camera",
   "variantName": "release",
   "elements": [
     {

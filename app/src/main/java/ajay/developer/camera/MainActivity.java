@@ -50,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
     public static final int REQUEST_IMAGE_CAPTURE=1;
     private String TAG = "TAGA";
     File photoFile = null;
-    EditText inpFileName, inpZONE;
+    EditText inpFileName;
     String fileName;
     String imageFileName;
     File storageDir;
@@ -277,7 +277,7 @@ Toast.makeText(MainActivity.this,"Quality set "+getQuality()+"%",Toast.LENGTH_LO
         else {
         setFileName(inpFileName.getText().toString());
         myFileIntent  =new Intent(Intent.ACTION_GET_CONTENT);
-        myFileIntent.setType("*/*");
+        myFileIntent.setType("image/*");
         startActivityForResult(myFileIntent,10);
     }}
 
