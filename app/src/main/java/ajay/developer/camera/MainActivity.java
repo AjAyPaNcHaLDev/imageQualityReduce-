@@ -23,6 +23,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.SeekBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import ajay.developer.camera.R;
@@ -34,8 +35,10 @@ import com.karumi.dexter.listener.PermissionRequest;
 import com.karumi.dexter.listener.single.PermissionListener;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -51,8 +54,10 @@ public class MainActivity extends AppCompatActivity {
     String fileName;
     String imageFileName;
     File storageDir;
-    Bitmap takenImage;
+TextView rangeValue;
     int Quality;
+    Button inpImage;
+Intent myFileIntent;
 
 SeekBar seekBar;
     public int getQuality() {
@@ -85,7 +90,7 @@ SeekBar seekBar;
         setFileName(inpFileName.getText().toString());
 
         if(getFileName().isEmpty() ){
-            Toast.makeText(MainActivity.this,"please fill ZONE and GIS", Toast.LENGTH_SHORT).show();
+            Toast.makeText(MainActivity.this,"please fill file name", Toast.LENGTH_SHORT).show();
         }
         else {
             Log.e(TAG, "dispatchTakePictureIntent: " );
@@ -150,7 +155,134 @@ SeekBar seekBar;
 
 
     }
-@Override
+
+
+    public  void myPermission(){
+        Dexter.withContext(this)
+                .withPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE).withListener(new PermissionListener() {
+            @Override
+            public void onPermissionGranted(PermissionGrantedResponse permissionGrantedResponse) {
+                imageView=findViewById(R.id.image_view);
+                capturePic=findViewById(R.id.capturePic);
+                inpFileName=findViewById(R.id.inpFileName);
+                seekBar=findViewById(R.id.inpseekBar);
+                inpImage=findViewById(R.id._inpImage);
+                rangeValue=findViewById(R.id.rangeValue);
+                accessCamera();
+                accessMemory();
+                seekBar.setProgress(50);
+                seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+
+                    @Override
+                    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                        setQuality(progress);
+
+                    }
+
+                    @Override
+                    public void onStartTrackingTouch(SeekBar seekBar) {
+
+                    }
+
+                    @Override
+                    public void onStopTrackingTouch(SeekBar seekBar) {
+Toast.makeText(MainActivity.this,"Quality set "+getQuality()+"%",Toast.LENGTH_LONG).show();
+                        rangeValue.setText("Drag to set Quality "+getQuality()+"%");
+                    }
+                });
+                capturePic.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+
+                        dispatchTakePictureIntent();
+                    }
+                });
+                inpImage.setOnClickListener(
+                        new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+
+                                imagePicker();
+                            }
+                        }
+                );
+            }
+
+            @Override
+            public void onPermissionDenied(PermissionDeniedResponse permissionDeniedResponse) {
+                capturePic=findViewById(R.id.capturePic);
+                inpImage=findViewById(R.id._inpImage);
+                capturePic.setText("Please allow all permissions");
+                inpImage.setText("Please allow all permissions");
+                capturePic.setOnClickListener(
+                        new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                myPermission();
+                                capturePic.setText("Capture & Save ");
+                                inpImage.setText("Click to Choose");
+                            }
+                        }
+                );
+                inpImage.setOnClickListener(
+                        new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                myPermission();
+                                capturePic.setText("Capture & Save ");
+                                inpImage.setText("Click to Choose");
+                            }
+                        }
+                );
+                Intent intent =new Intent();
+                intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                Uri uri=Uri.fromParts("package",getPackageName(),null);
+                intent.setData(uri);
+                accessCamera();
+                accessMemory();
+            }
+
+            @Override
+            public void onPermissionRationaleShouldBeShown(PermissionRequest permissionRequest, PermissionToken permissionToken) {
+                permissionToken.continuePermissionRequest();
+            }
+        }).check();
+
+
+    }
+
+    public void accessCamera(){
+        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+
+            ActivityCompat.requestPermissions(MainActivity.this,
+                    new String[]{
+                            Manifest.permission.CAMERA
+                    }, 100);}
+
+    }
+    public  void accessMemory(){
+        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE}, PackageManager.PERMISSION_GRANTED);
+        if(ContextCompat.checkSelfPermission(MainActivity.this,Manifest.permission.WRITE_EXTERNAL_STORAGE)!=PackageManager.PERMISSION_GRANTED){
+            ActivityCompat.requestPermissions(MainActivity.this,new  String[]{
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+            },100);
+        }
+    }
+
+    public  void  imagePicker(){
+        setFileName(inpFileName.getText().toString());
+        if(getFileName().isEmpty() ){
+            Toast.makeText(MainActivity.this,"please fill file name", Toast.LENGTH_SHORT).show();
+        }
+        else {
+        setFileName(inpFileName.getText().toString());
+        myFileIntent  =new Intent(Intent.ACTION_GET_CONTENT);
+        myFileIntent.setType("*/*");
+        startActivityForResult(myFileIntent,10);
+    }}
+
+
+    @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_IMAGE_CAPTURE) {
@@ -169,7 +301,7 @@ SeekBar seekBar;
                         Locale.getDefault()).format(new Date());
                 String file_name=getFileName();
                 String root = Environment.getExternalStorageDirectory().getPath();
-                File myDir = new File(root + "/Image Quality reduce/Pictures/"+dd+"-"+mm+"-"+yyyy+"/");
+                File myDir = new File(root + "/Image Quality reduce/Pictures/");
                 myDir.mkdirs();
                 Log.e(TAG, "onactivity function: end "+currentPhotoPath );
                 if(myDir.exists()){
@@ -260,99 +392,71 @@ SeekBar seekBar;
             } else { // Result was a failure
                 Toast.makeText(this, "Picture wasn't taken!", Toast.LENGTH_SHORT).show();
             }
+            File del = new File (currentPhotoPath);
+            del.delete();
+        }
+        if(requestCode==10){
+if(resultCode==RESULT_OK){
+
+    AlertDialog.Builder Change_quality=new AlertDialog.Builder(MainActivity.this);
+    imageView.setImageURI(data.getData());
+    Change_quality.setTitle("Change quality of this picture");
+    Change_quality.setMessage(data.getData().getPath());
+    Change_quality.setCancelable(false);
+    Change_quality.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+        @Override
+        public void onClick(DialogInterface dialog, int which) {
+
+            try{
+                InputStream inputStream=getContentResolver().openInputStream(data.getData());
+
+                Bitmap tempImage=BitmapFactory.decodeStream(inputStream);
+                imageView.setImageBitmap(tempImage);
+
+                try {
+                    String root = Environment.getExternalStorageDirectory().getPath();
+                    File myDir = new File(root + "/Image Quality reduce/Pictures/");
+                    File file = new File (myDir, getFileName()+".jpeg");
+                    FileOutputStream out = new FileOutputStream(file);
+                    tempImage.compress(Bitmap.CompressFormat.JPEG, getQuality(), out);
+                    out.flush();
+                    out.close();
+                    imageView.setImageBitmap(tempImage);
+                    Toast.makeText(MainActivity.this,getFileName()+ " capture successfully Saved", Toast.LENGTH_LONG).show();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Toast.makeText(MainActivity.this,e.toString(), Toast.LENGTH_LONG).show();
+                }
+
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+
+        }
+    });
+
+
+    Change_quality.setNegativeButton("No", new DialogInterface.OnClickListener() {
+        @Override
+        public void onClick(DialogInterface dialog, int which) {
+            imageView.setImageURI(null);
+            dialog.cancel();
+        }
+    });
+
+    AlertDialog ChangeQuality=Change_quality.create();
+    ChangeQuality.show();
+
+}
+
         }
 
-        File del = new File (currentPhotoPath);
-        del.delete();
+
+
 
     }
 
 
-    public  void myPermission(){
-        Dexter.withContext(this)
-                .withPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE).withListener(new PermissionListener() {
-            @Override
-            public void onPermissionGranted(PermissionGrantedResponse permissionGrantedResponse) {
-                imageView=findViewById(R.id.image_view);
-                capturePic=findViewById(R.id.capturePic);
-                inpFileName=findViewById(R.id.inpFileName);
-                seekBar=findViewById(R.id.inpseekBar);
-                accessCamera();
-                accessMemory();
-
-                seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-
-                    @Override
-                    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                        setQuality(progress);
-
-                    }
-
-                    @Override
-                    public void onStartTrackingTouch(SeekBar seekBar) {
-
-                    }
-
-                    @Override
-                    public void onStopTrackingTouch(SeekBar seekBar) {
-Toast.makeText(MainActivity.this,"Bar value is set to"+getQuality(),Toast.LENGTH_LONG).show();
-                    }
-                });
-                capturePic.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-
-                        dispatchTakePictureIntent();
-                    }
-                });
-            }
-
-            @Override
-            public void onPermissionDenied(PermissionDeniedResponse permissionDeniedResponse) {
-
-                capturePic=findViewById(R.id.capturePic);
-                capturePic.setText("Please allow all permissions");
-                capturePic.setOnClickListener(
-                        new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                myPermission();
-                                capturePic.setText("Capture & Save ");
-                            }
-                        }
-                );
-                Intent intent =new Intent();
-                intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                Uri uri=Uri.fromParts("package",getPackageName(),null);
-                intent.setData(uri);
-                accessCamera();
-                accessMemory();
-            }
-
-            @Override
-            public void onPermissionRationaleShouldBeShown(PermissionRequest permissionRequest, PermissionToken permissionToken) {
-                permissionToken.continuePermissionRequest();
-            }
-        }).check();
 
 
-    }
-
-    public void accessCamera(){
-        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-
-            ActivityCompat.requestPermissions(MainActivity.this,
-                    new String[]{
-                            Manifest.permission.CAMERA
-                    }, 100);}
-
-    }
-    public  void accessMemory(){
-        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE}, PackageManager.PERMISSION_GRANTED);
-        if(ContextCompat.checkSelfPermission(MainActivity.this,Manifest.permission.WRITE_EXTERNAL_STORAGE)!=PackageManager.PERMISSION_GRANTED){
-            ActivityCompat.requestPermissions(MainActivity.this,new  String[]{
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE
-            },100);
-        }
-    }
 }
