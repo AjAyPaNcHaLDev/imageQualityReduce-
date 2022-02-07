@@ -37,6 +37,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="textPersonName"
+            android:textAlignment="center"
+            android:gravity="center"
             android:layout_marginBottom="12sp"
             android:id="@+id/inpFileName"
             android:hint="enter file name"
